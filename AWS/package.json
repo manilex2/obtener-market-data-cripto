@@ -1,0 +1,13 @@
+{
+  "name": "obtener-market-data-cripto",
+  "version": "1.0.0",
+  "description": "Funcion que toma los datos actuales y los guarda en la base de datos.",
+  "main": "index.js",
+  "author": "Manuel Pereira",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "mysql2": "^2.3.3",
+    "node-fetch": "^2.6.7"
+  }
+}
