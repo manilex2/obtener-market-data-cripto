@@ -7,6 +7,7 @@ provider:
   name: aws
   runtime: nodejs16.x
   region: us-east-2
+  stage: prod
   environment:
     DB_HOST: ${env:DB_HOST}
     DB_USER: ${env:DB_USER}
