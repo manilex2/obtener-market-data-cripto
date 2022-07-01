@@ -18,7 +18,7 @@ provider:
     
 
 functions:
-  agregarDatos:
+  obtener-market-data-cripto:
     handler: index.handler
     memorySize: 256
     name: obtener-market-data-cripto
