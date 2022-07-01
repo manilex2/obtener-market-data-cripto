@@ -1,0 +1,30 @@
+# serverless.yml
+
+service: obtener-market-data-cripto
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  region: us-east-2
+  environment:
+    DB_HOST: ${env:DB_HOST}
+    DB_USER: ${env:DB_USER}
+    DB_PASSWORD: ${env:DB_PASSWORD}
+    DB_PORT: ${env:DB_PORT}
+    DB_DATABASE: ${env:DB_DATABASE}
+    TABLE_MARKET: ${env:TABLE_MARKET}
+    TABLE_CRIPTO: ${env:TABLE_CRIPTO}
+    
+
+functions:
+  agregarDatos:
+    handler: index.handler
+    memorySize: 256
+    name: obtener-market-data-cripto
+    description: LCF17 - Funcion que toma los datos actuales del mercado de criptos y los guarda en la base de datos.
+    timeout: 300
+    maximumRetryAttempts: 0
+    events:
+      - eventBridge:
+          schedule: cron(0 15 ? * * *)

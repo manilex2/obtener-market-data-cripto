@@ -15,15 +15,23 @@ exports.handler = async function (event) {
         var sql = `DELETE FROM ${process.env.TABLE_MARKET}`;
         var sql2 = `ALTER TABLE ${process.env.TABLE_MARKET} AUTO_INCREMENT=1`
         var sql3 = `SELECT name FROM ${process.env.TABLE_CRIPTO}`;
-        conexion.query(sql, async (req, resultado) => {
-            console.log(resultado);
+        conexion.query(sql, async (err, resultado) => {
+            if(err) {
+                console.error(err);
+            }
         });
-        conexion.query(sql2, async (req, resultado) => {
-            console.log(resultado);
+        conexion.query(sql2, async (err, resultado) => {
+            if(err) {
+                console.error(err);
+            }
         });
-        conexion.query(sql3, async (req, resultado) => {
-            await obtenerDatosApi(resultado);
-            await finalizarEjecucion();
+        conexion.query(sql3, async (err, resultado) => {
+            if(err) {
+                console.error(err);
+            } else {
+                await obtenerDatosApi(resultado);
+                await finalizarEjecucion();
+            }
         });
     
         async function obtenerDatosApi(resultado) {
@@ -32,7 +40,6 @@ exports.handler = async function (event) {
                 try {
                     const response = await fetch(`https://api.coingecko.com/api/v3/coins/${cripto}`)
                     .then(res => {
-                        console.log(res);
                         return res.json();
                     })
                     .then(json => {
@@ -41,7 +48,18 @@ exports.handler = async function (event) {
                     .catch((err) => {
                         console.error(err);
                     })
-                    await guardarDatos(response);
+                    if (response.error == "Could not find coin with the given id") {
+                        var sql5 = `INSERT INTO ${process.env.TABLE_MARKET} (
+                            coin_id,
+                            error
+                        ) VALUES ("${cripto}", "No existe en Coingecko el Market Data para esta criptomoneda")`;
+                        conexion.query(sql5, function (err, resultado) {
+                            if(err) throw err;
+                        });
+                        console.error(`${response.error} for ${cripto}`);
+                    } else {
+                        await guardarDatos(response); 
+                    }
                 } catch (error) {
                     console.error(error);
                 }
@@ -53,36 +71,63 @@ exports.handler = async function (event) {
             var coinId = market.id;
             var symbol = market.symbol;
             var name = market.name;
-            if (!market.description.en) {
-                var descriptionEN = "";
-            } else {
-                var descriptionEN = market.description.en;
+            if (market.description) {
+                if (!market.description.en) {
+                    var descriptionEN = "";
+                } else {
+                    var descriptionEN = market.description.en;
+                }
+                if (!market.description.es) {
+                    var descriptionES = "";
+                } else {
+                    var descriptionES = market.description.es;
+                }
+                
             }
-            if (!market.description.es) {
-                var descriptionES = "";
-            } else {
-                var descriptionES = market.description.es;
-            }
-            for (let i = 0; i < market.links.homepage.length; i++) {
-                const element = market.links.homepage[i];
-                if (!element) {
-                    market.links.homepage.splice(i, 1);
-                    i = i - 1;
+            if (market.links) {
+                if (market.links.homepage) {
+                    for (let i = 0; i < market.links.homepage.length; i++) {
+                        const element = market.links.homepage[i];
+                        if (!element) {
+                            market.links.homepage.splice(i, 1);
+                            i = i - 1;
+                        }
+                    }
+                    var linksHomepage = market.links.homepage.join(", ");
+                }
+                if (market.links.blockchain_site) {
+                    for (let i = 0; i < market.links.blockchain_site.length; i++) {
+                        const element = market.links.blockchain_site[i];
+                        if (!element) {
+                            market.links.blockchain_site.splice(i, 1);
+                            i = i - 1;
+                        }
+                    }
+                    var linksBlockchain = market.links.blockchain_site.join(", ");
+                }
+                if (market.links.twitter_screen_name) {
+                    var linksTwitter = market.links.twitter_screen_name;
+                } else {
+                    var linksTwitter = "";
                 }
             }
-            for (let i = 0; i < market.links.blockchain_site.length; i++) {
-                const element = market.links.blockchain_site[i];
-                if (!element) {
-                    market.links.blockchain_site.splice(i, 1);
-                    i = i - 1;
+            if (market.image) {
+                if (market.image.thumb) {
+                    var imageThumb = market.image.thumb;
+                } else {
+                    var imageThumb = "";
+                }
+                if (market.image.small) {
+                    var imageSmall = market.image.small;
+                } else {
+                    var imageSmall = "";
+                }
+                if (market.image.large) {
+                    var imageLarge = market.image.large;
+                } else {
+                    var imageLarge = "";
                 }
             }
-            var linksHomepage = market.links.homepage.join(", ");
-            var linksBlockchain = market.links.blockchain_site.join(", ");
-            var linksTwitter = market.links.twitter_screen_name;
-            var imageThumb = market.image.thumb;
-            var imageSmall = market.image.small;
-            var imageLarge = market.image.large;
             var sentimentVotesUpPercentage = market.sentiment_votes_up_percentage;
             var sentimentVotesDownPercentage = market.sentiment_votes_down_percentage;
             var coingeckoRank = market.coingecko_rank;
@@ -91,71 +136,108 @@ exports.handler = async function (event) {
             var communityScore = market.community_score;
             var liquidityScore = market.liquidity_score;
             var publicInterestScore = market.public_interest_score;
-            var athChangePercentage = market.market_data.ath_change_percentage.usd;
-            var athDate = market.market_data.ath_date.usd;
-            var marketCap = market.market_data.market_cap.usd;
-            var marketCapRank = market.market_data.market_cap_rank;
-            var totalVolume = market.market_data.total_volume.usd;
-            var priceChangePercentage24h = market.market_data.price_change_percentage_24h;
-            var priceChangePercentage7d = market.market_data.price_change_percentage_7d;
-            var priceChangePercentage30d = market.market_data.price_change_percentage_30d;
-            var priceChangePercentage200d = market.market_data.price_change_percentage_200d;
-            var priceChangePercentage1y = market.market_data.price_change_percentage_1y;
-            var totalSupply = market.market_data.total_supply;
-            var maxSupply = market.market_data.max_supply;
-            var circulatingSupply = market.market_data.circulating_supply;
-            var lastUpdated = market.market_data.last_updated;
-            var twitterFollowers = market.community_data.twitter_followers;
-            for (let i = 0; i < market.tickers.length; i++) {
-                const element = market.tickers[i];
-                if (element.base == symbol.toUpperCase() && (element.target == "USD" || element.target == "USDT")) {
-                    arreglo.push([
-                        coinId,
-                        symbol,
-                        name,
-                        descriptionEN,
-                        descriptionES,
-                        linksHomepage,
-                        linksBlockchain,
-                        linksTwitter,
-                        imageThumb,
-                        imageSmall,
-                        imageLarge,
-                        sentimentVotesUpPercentage,
-                        sentimentVotesDownPercentage,
-                        coingeckoRank,
-                        coingeckoScore,
-                        developerScore,
-                        communityScore,
-                        liquidityScore,
-                        publicInterestScore,
-                        athChangePercentage,
-                        athDate,
-                        marketCap,
-                        marketCapRank,
-                        totalVolume,
-                        priceChangePercentage24h,
-                        priceChangePercentage7d,
-                        priceChangePercentage30d,
-                        priceChangePercentage200d,
-                        priceChangePercentage1y,
-                        totalSupply,
-                        maxSupply,
-                        circulatingSupply,
-                        lastUpdated,
-                        twitterFollowers,
-                        element.base,
-                        element.target,
-                        element.market.name,
-                        element.volume,
-                        element.converted_volume.usd,
-                        element.trust_score,
-                        element.trade_url,
-                        element.token_info_url
-                    ]);
+            if (market.market_data) {
+                if (market.market_data.ath_change_percentage) {
+                    if (market.market_data.ath_change_percentage.usd) {
+                        var athChangePercentage = market.market_data.ath_change_percentage.usd;
+                    } else {
+                        var athChangePercentage = 0;
+                    }
+                } else {
+                    var athChangePercentage = 0;
                 }
+                if (market.market_data.ath_date) {
+                    if (market.market_data.ath_date.usd) {
+                        var athDate = market.market_data.ath_date.usd;
+                    } else {
+                        var athDate = 0;
+                    }
+                } else {
+                    var athDate = 0;
+                }
+                if (market.market_data.market_cap) {
+                    if (market.market_data.market_cap.usd) {
+                        var marketCap = market.market_data.market_cap.usd;
+                    } else {
+                        var marketCap = 0;
+                    }
+                } else {
+                    var marketCap = 0;
+                }
+                if (market.market_data.total_volume) {
+                    if (market.market_data.total_volume.usd) {
+                        var totalVolume = market.market_data.total_volume.usd;
+                    } else {
+                        var totalVolume = 0;
+                    }
+                } else {
+                    var totalVolume = 0;
+                }
+                var marketCapRank = market.market_data.market_cap_rank? market.market_data.market_cap_rank : 0;
+                var priceChangePercentage24h = market.market_data.price_change_percentage_24h? market.market_data.price_change_percentage_24h : 0;
+                var priceChangePercentage7d = market.market_data.price_change_percentage_7d? market.market_data.price_change_percentage_7d : 0;
+                var priceChangePercentage30d = market.market_data.price_change_percentage_30d? market.market_data.price_change_percentage_30d : 0;
+                var priceChangePercentage200d = market.market_data.price_change_percentage_200d? market.market_data.price_change_percentage_200d : 0;
+                var priceChangePercentage1y = market.market_data.price_change_percentage_1y? market.market_data.price_change_percentage_1y : 0;
+                var totalSupply = market.market_data.total_supply? market.market_data.total_supply : 0;
+                var maxSupply = market.market_data.max_supply? market.market_data.max_supply : 0;
+                var circulatingSupply = market.market_data.circulating_supply? market.market_data.circulating_supply : 0;
+                var lastUpdated = market.market_data.last_updated? market.market_data.last_updated : 0;
             }
-            var sql4 = `INSERT INTO ${process.env.TABLE_MARKET} (
+            if (market.community_data) {
+                var twitterFollowers = market.community_data.twitter_followers? market.community_data.twitter_followers : 0;
+            }
+            if (market.tickers) {
+                for (let i = 0; i < market.tickers.length; i++) {
+                    const element = market.tickers[i];
+                    if (element.base == symbol.toUpperCase() && (element.target == "USD" || element.target == "USDT")) {
+                        arreglo.push([
+                            coinId,
+                            symbol,
+                            name,
+                            descriptionEN,
+                            descriptionES,
+                            linksHomepage,
+                            linksBlockchain,
+                            linksTwitter,
+                            imageThumb,
+                            imageSmall,
+                            imageLarge,
+                            sentimentVotesUpPercentage,
+                            sentimentVotesDownPercentage,
+                            coingeckoRank,
+                            coingeckoScore,
+                            developerScore,
+                            communityScore,
+                            liquidityScore,
+                            publicInterestScore,
+                            athChangePercentage,
+                            athDate,
+                            marketCap,
+                            marketCapRank,
+                            totalVolume,
+                            priceChangePercentage24h,
+                            priceChangePercentage7d,
+                            priceChangePercentage30d,
+                            priceChangePercentage200d,
+                            priceChangePercentage1y,
+                            totalSupply,
+                            maxSupply,
+                            circulatingSupply,
+                            lastUpdated,
+                            twitterFollowers,
+                            element.base,
+                            element.target,
+                            element.market.name,
+                            element.volume,
+                            element.converted_volume.usd,
+                            element.trust_score,
+                            element.trade_url,
+                            element.token_info_url
+                        ]);
+                    }
+                }
+                var sql4 = `INSERT INTO ${process.env.TABLE_MARKET} (
                         coin_id,
                         symbol,
                         name,
@@ -198,14 +280,11 @@ exports.handler = async function (event) {
                         trust_score,
                         trade_url,
                         token_info_url
-            ) VALUES ?`;
-            conexion.query(sql4, [arreglo], function (err, resultado) {
-                if(err) {
-                    console.error(err);
-                } else {
-                    console.log(resultado);
-                }
-            });
+                ) VALUES ?`;
+                conexion.query(sql4, [arreglo], function (err, resultado) {
+                    if(err) throw err;
+                });
+            }
         }
     
         async function finalizarEjecucion() {
