@@ -16,15 +16,16 @@ provider:
     DB_DATABASE: ${env:DB_DATABASE}
     TABLE_MARKET: ${env:TABLE_MARKET}
     TABLE_CRIPTO: ${env:TABLE_CRIPTO}
+    NUM_GRUPOS: ${env:NUM_GRUPOS}
+    DELAY: ${env:DELAY}
     
-
 functions:
   obtener-market-data-cripto:
     handler: index.handler
-    memorySize: 256
+    memorySize: 1024
     name: obtener-market-data-cripto
     description: LCF17 - Funcion que toma los datos actuales del mercado de criptos y los guarda en la base de datos.
-    timeout: 300
+    timeout: 720
     maximumRetryAttempts: 0
     events:
       - eventBridge:

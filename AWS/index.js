@@ -25,17 +25,37 @@ exports.handler = async function (event) {
                 console.error(err);
             }
         });
+        async function delay(ms) {
+            return await new Promise(resolve => setTimeout(resolve, ms));
+          }
         conexion.query(sql3, async (err, resultado) => {
-            if(err) {
-                console.error(err);
-            } else {
-                await obtenerDatosApi(resultado);
+            if(err) throw err;
+            var grupo = Math.floor(resultado.length/process.env.NUM_GRUPOS);
+            var contador = grupo;
+            var cantGrupos = [contador];
+            while (contador < resultado.length) {
+                contador = contador + grupo;
+                cantGrupos.push(contador);
+            }
+            if (contador > resultado.length) {
+                cantGrupos.pop();
+                cantGrupos.push(resultado.length);
+            }
+            var inicio = 0;
+            for (let i = 0; i < cantGrupos.length; i++) {
+                const fin = cantGrupos[i];
+                console.log(`Entre ${i+1} veces`);
+                await delay(process.env.DELAY);
+                await obtenerDatosApi(resultado, inicio, fin);
+                inicio = fin;
+            }
+            if (inicio == resultado.length) {
                 await finalizarEjecucion();
             }
         });
     
-        async function obtenerDatosApi(resultado) {
-            for (let i = 0; i < resultado.length; i++) {
+        async function obtenerDatosApi(resultado, inicio, fin) {
+            for (let i = inicio; i < fin; i++) {
                 const cripto = resultado[i].name;
                 try {
                     const response = await fetch(`https://api.coingecko.com/api/v3/coins/${cripto}`)
@@ -286,10 +306,6 @@ exports.handler = async function (event) {
                 });
             }
         }
-    
-        async function finalizarEjecucion() {
-            conexion.end();
-        };
     });
     return promise;
 };
