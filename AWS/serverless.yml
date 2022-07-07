@@ -24,7 +24,7 @@ functions:
     handler: index.handler
     memorySize: 1024
     name: obtener-market-data-cripto
-    description: LCF17 - Funcion que toma los datos actuales del mercado de criptos y los guarda en la base de datos.
+    description: LCF15 - Funcion que toma los datos actuales del mercado de criptos y los guarda en la base de datos.
     timeout: 720
     maximumRetryAttempts: 0
     events:
