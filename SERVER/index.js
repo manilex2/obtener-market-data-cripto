@@ -55,6 +55,7 @@ app.get("/", (req, res) => {
             inicio = fin;
         }
         if (inicio == resultado.length) {
+            await delay(30000);
             await finalizarEjecucion();
         }
     });

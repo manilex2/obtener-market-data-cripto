@@ -50,6 +50,7 @@ exports.handler = async function (event) {
                 inicio = fin;
             }
             if (inicio == resultado.length) {
+                await delay(30000);
                 await finalizarEjecucion();
             }
         });
