@@ -50,8 +50,8 @@ app.get("/", (req, res) => {
         for (let i = 0; i < cantGrupos.length; i++) {
             const fin = cantGrupos[i];
             console.log(`Entre ${i+1} veces`);
-            await delay(process.env.DELAY);
             await obtenerDatosApi(resultado, inicio, fin);
+            await delay(process.env.DELAY);
             inicio = fin;
         }
         if (inicio == resultado.length) {
