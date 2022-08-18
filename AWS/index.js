@@ -45,12 +45,13 @@ exports.handler = async function (event) {
             for (let i = 0; i < cantGrupos.length; i++) {
                 const fin = cantGrupos[i];
                 console.log(`Entre ${i+1} veces`);
-                await delay(process.env.DELAY);
                 await obtenerDatosApi(resultado, inicio, fin);
+                await delay(process.env.DELAY);
                 inicio = fin;
             }
             if (inicio == resultado.length) {
-                await delay(30000);
+                await delay(20000);
+                await finalizarEjecucion();
             }
         });
     
@@ -305,6 +306,9 @@ exports.handler = async function (event) {
                     if(err) throw err;
                 });
             }
+        }
+        async function finalizarEjecucion() {
+            return "Finalizado";
         }
     });
     return promise;

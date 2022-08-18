@@ -9,5 +9,8 @@
     "dotenv": "^16.0.1",
     "mysql2": "^2.3.3",
     "node-fetch": "^2.6.7"
+  },
+  "devDependencies": {
+    "serverless-offline": "^9.2.4"
   }
 }
