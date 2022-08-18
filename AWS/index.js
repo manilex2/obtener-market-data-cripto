@@ -51,7 +51,6 @@ exports.handler = async function (event) {
             }
             if (inicio == resultado.length) {
                 await delay(30000);
-                await finalizarEjecucion();
             }
         });
     
