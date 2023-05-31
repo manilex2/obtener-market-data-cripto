@@ -27,7 +27,7 @@ exports.handler = async function (event) {
         });
         async function delay(ms) {
             return await new Promise(resolve => setTimeout(resolve, ms));
-          }
+        }
         conexion.query(sql3, async (err, resultado) => {
             if(err) throw err;
             var grupo = Math.floor(resultado.length/process.env.NUM_GRUPOS);
@@ -50,7 +50,6 @@ exports.handler = async function (event) {
                 inicio = fin;
             }
             if (inicio == resultado.length) {
-                await delay(20000);
                 await finalizarEjecucion();
             }
         });
@@ -78,8 +77,12 @@ exports.handler = async function (event) {
                             if(err) throw err;
                         });
                         console.error(`${response.error} for ${cripto}`);
+                    } else if (response.status && response.status.error_code == 429) {
+                        console.error(response.status.error_message);
+                        throw response.status.error_message;
                     } else {
-                        await guardarDatos(response); 
+                        console.log(response);
+                        await guardarDatos(response);
                     }
                 } catch (error) {
                     console.error(error);
@@ -258,53 +261,55 @@ exports.handler = async function (event) {
                         ]);
                     }
                 }
+                console.log("Entre aquí antes de ejecutar la base", coinId);
                 var sql4 = `INSERT INTO ${process.env.TABLE_MARKET} (
-                        coin_id,
-                        symbol,
-                        name,
-                        description_en,
-                        description_es,
-                        homepage,
-                        blockchain_site,
-                        twitter_screenname,
-                        image_thumb,
-                        image_small,
-                        image_large,
-                        sentiment_votes_up_percentage,
-                        sentiment_votes_down_percentage,
-                        coingecko_rank,
-                        coingecko_score,
-                        developer_score,
-                        community_score,
-                        liquidity_score,
-                        public_interest_score,
-                        ath_change_percentage,
-                        ath_date,
-                        market_cap,
-                        market_cap_rank,
-                        total_volume,
-                        price_change_percentage_24h,
-                        price_change_percentage_7d,
-                        price_change_percentage_30d,
-                        price_change_percentage_200d,
-                        price_change_percentage_1y,
-                        total_supply,
-                        max_supply,
-                        circulating_supply,
-                        last_updated,
-                        twitter_followers,
-                        base,
-                        target,
-                        market_name,
-                        volume,
-                        converted_volume,
-                        trust_score,
-                        trade_url,
-                        token_info_url
-                ) VALUES ?`;
-                conexion.query(sql4, [arreglo], function (err, resultado) {
-                    if(err) throw err;
-                });
+                    coin_id,
+                    symbol,
+                    name,
+                    description_en,
+                    description_es,
+                    homepage,
+                    blockchain_site,
+                    twitter_screenname,
+                    image_thumb,
+                    image_small,
+                    image_large,
+                    sentiment_votes_up_percentage,
+                    sentiment_votes_down_percentage,
+                    coingecko_rank,
+                    coingecko_score,
+                    developer_score,
+                    community_score,
+                    liquidity_score,
+                    public_interest_score,
+                    ath_change_percentage,
+                    ath_date,
+                    market_cap,
+                    market_cap_rank,
+                    total_volume,
+                    price_change_percentage_24h,
+                    price_change_percentage_7d,
+                    price_change_percentage_30d,
+                    price_change_percentage_200d,
+                    price_change_percentage_1y,
+                    total_supply,
+                    max_supply,
+                    circulating_supply,
+                    last_updated,
+                    twitter_followers,
+                    base,
+                    target,
+                    market_name,
+                    volume,
+                    converted_volume,
+                    trust_score,
+                    trade_url,
+                    token_info_url
+            ) VALUES ?`;
+            conexion.query(sql4, [arreglo], function (err, resultado) {
+                if(err) throw err;
+                console.log(resultado);
+            });
             }
         }
         async function finalizarEjecucion() {
